@@ -1,0 +1,22 @@
+var mongoose = require("mongoose");
+var sysfld = require("./sys");
+var Status = require("./status");
+var connections = require("../db/connections");
+var Schema = mongoose.Schema;
+
+var asset = new Schema({
+  sys: { type: sysfld, required: true },
+  name: { type: String, required: true },
+  title: { type: Object, required: true },
+  description: { type: Object },
+  url: { type: Object },
+  fileType: { type: Object },
+  status: {
+    type: String,
+    enum: ["draft", "published", "changed", "archived"],
+    default: "draft"
+  },
+  statusLog: [Status]
+});
+
+module.exports = connections.contentDb.model("Asset", asset);
