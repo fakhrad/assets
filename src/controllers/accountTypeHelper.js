@@ -12,6 +12,36 @@ var ObjectID = require('mongodb').ObjectID;
 const fs = require('fs');
 var assetController = require('./assetController');
 var storage = undefined;
+const sharp = require('sharp');
+
+function StreamImage(req, res, GridFile) {
+  var h, w;
+  if (req.query.h) {
+    try {
+      h = parseInt(req.query.h)
+    }
+    catch
+    { }
+  }
+  if (req.query.w) {
+    try {
+      w = parseInt(req.query.w)
+    }
+    catch
+    { }
+  }
+  // stream back whole file
+  console.log('No Range Request');
+  res.header('Content-Type', GridFile.contentType);
+  // Create Sharp pipeline for resizing the image and use pipe to read from bucket read stream
+  const pipeline = sharp();
+  var stream = GridFile.stream(true);
+  if (w & h)
+    pipeline.resize(w, h).pipe(res);
+  else
+    pipeline.pipe(res);
+  stream.pipe(pipeline);
+}
 
 function StreamGridFile(req, res, GridFile) {
   if (req.headers['range']) {
@@ -178,6 +208,73 @@ exports.download = (req, res, next) => {
   }
 }
 
+exports.downloadImage = (req, res, next) => {
+  var storage = undefined;
+  var stype = req.storageType || config.storageType
+  console.log("starting download... : " + stype)
+  switch (stype) {
+    case "disk":
+      storage = disk;
+      break;
+    case "database":
+      storage = db;
+      console.log("GridStore reading");
+      new GridStore(db.db, req.params.filename, 'r').open(function (err, GridFile) {
+        if (!GridFile) {
+          console.log("Grid file not found");
+          res.send(404, 'Not Found');
+          return;
+        }
+        if (err) {
+          console.log(err)
+          res.send(400, err);
+          return;
+        } else
+          StreamImage(req, res, GridFile);
+      });
+      // const bucket = new mongodb.GridFSBucket(db.db, {
+      //   chunkSizeBytes: 1024
+      // });
+      // bucket.find({
+      //   filename: req.params.filename
+      // }).toArray(function (err, files) {
+      //   if (err)
+      //     res.status(400).send(err);
+      //   else {
+      //     console.log(files);
+      //     if (files.length == 0) {
+      //       res.status(404).send("not_found");
+      //       return;
+      //     }
+      //     res.setHeader("Content-Type", files[0]["contentType"]);
+      //     bucket.openDownloadStreamByName(req.params.filename).
+      //     pipe(res).
+      //     on('error', function (error) {
+      //       console.log(error);
+      //     }).
+      //     on('finish', function () {
+      //       console.log('done!');
+      //     });
+      //   }
+      // });
+
+      break;
+    case "s3":
+      switch (req.account_type) {
+        default:
+        case "free":
+          storage = getFreeUserStorage(req);
+          break;
+        case "advanced":
+          storage = getAdvancedUserStorage(req);
+          break;
+        case "premium":
+          storage = getPremiumUserStorage(req);
+          break;
+      }
+      break;
+  }
+}
 exports.hlsstream = (req, res, next) => {
   var storage = undefined;
   var stype = req.storageType || config.storageType
