@@ -4,8 +4,8 @@
   "description": "Assets service",
   "main": "index.js",
   "scripts": {
-    "start": "NODE_ENV=production node ./src/bin/www",
-    "startdev": "nodemon ./src/bin/www",
+    "start": "NODE_ENV=production node ./src/bin/www.cjs",
+    "startdev": "nodemon ./src/bin/www.cjs",
     "test": "echo \"Error: no test specified\" && exit 1",
     "docs": "apidoc -i ./src/ -o apidoc/"
   },
@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/fakhrad/assets#readme",
   "dependencies": {
-    "amqplib": "0.5.3",
+    "amqplib": "0.8.0",
     "aws-sdk": "2.432.0",
     "body-parser": "1.18.3",
     "compression": "1.7.4",
@@ -44,7 +44,7 @@
     "multer-s3": "2.9.0",
     "nodemon": "1.18.10",
     "path": "0.12.7",
-    "sharp": "0.25.4",
+    "sharp": "0.29.1",
     "uuid": "3.3.2"
   }
 }
